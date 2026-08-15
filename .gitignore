@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+*/node_modules/
+package-lock.json
+
+# Environment & Secrets (Crucial: never commit real .env to GitHub)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*/.env
+
+# Build Output
+dist/
+build/
+*/dist/
+*/build/
+
+# Logs & Debug
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Windows Batch / Helper Scripts (Excluded from Git)
+*.bat
+*.cmd
+run-dev.bat
+seed-db.bat
+
+# Editor & OS Metadata
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
+
+# Archives & Temporary files
+*.zip
+*.tar.gz
+scratch/
