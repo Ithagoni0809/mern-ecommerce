@@ -74,7 +74,22 @@ const Register = () => {
       await register(formData);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      if (!err.response) {
+        setError('Unable to reach the server. Please check your internet connection and try again.');
+      } else {
+        const msg = err.response?.data?.message;
+        if (msg) {
+          setError(msg);
+        } else if (err.response?.status === 409 || err.response?.status === 400) {
+          setError('An account with this email already exists. Please use a different email or sign in instead.');
+        } else if (err.response?.status === 422) {
+          setError('Some required fields are missing or invalid. Please fill in all required fields correctly.');
+        } else if (err.response?.status === 500) {
+          setError('Server error. Please try again in a few moments.');
+        } else {
+          setError('Registration failed. Please check your details and try again.');
+        }
+      }
     }
   };
 

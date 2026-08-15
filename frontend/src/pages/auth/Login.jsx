@@ -18,7 +18,24 @@ const Login = () => {
       await login(email, password);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to login credentials');
+      if (!err.response) {
+        setError('Unable to reach the server. Please check your internet connection and try again.');
+      } else {
+        const msg = err.response?.data?.message;
+        if (msg) {
+          setError(msg);
+        } else if (err.response?.status === 401) {
+          setError('Incorrect email or password. Please check your credentials and try again.');
+        } else if (err.response?.status === 404) {
+          setError('No account found with this email address. Please register first.');
+        } else if (err.response?.status === 403) {
+          setError('Your account has been suspended. Please contact support.');
+        } else if (err.response?.status === 500) {
+          setError('Server error. Please try again in a few moments.');
+        } else {
+          setError('Login failed. Please check your email and password and try again.');
+        }
+      }
     }
   };
 
