@@ -116,8 +116,10 @@ CLIENT_URL=http://localhost:5173
 MONGO_URI=your_mongodb_atlas_connection_string
 JWT_SECRET=your_jwt_secret_key
 JWT_EXPIRE=7d
-STRIPE_SECRET_KEY=sk_test_your_stripe_sandbox_key
-STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
+
+# Optional — only needed if testing Stripe payments
+# STRIPE_SECRET_KEY=sk_test_your_stripe_sandbox_key
+# STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
 ```
 
 ---
