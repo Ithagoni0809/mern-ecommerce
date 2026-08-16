@@ -7,6 +7,8 @@ const {
   getAdminDashboardStats,
   getAllUsers,
   updateUserRole,
+  toggleUserStatus,
+  cancelOrderAdmin,
   getPendingSellerRequests,
   decideSellerRequest,
   getPendingProducts,
@@ -24,6 +26,8 @@ router.get("/dashboard", getAdminDashboardStats);
 router.get("/stats", getAdminDashboardStats);
 router.get("/users", getAllUsers);
 router.put("/users/:id/role", validateRequiredFields(["role"]), updateUserRole);
+router.put("/users/:id/toggle-status", toggleUserStatus);
+router.put("/orders/:id/cancel", cancelOrderAdmin);
 
 // Seller Request Onboarding Queue
 router.get("/sellers/requests", getPendingSellerRequests);

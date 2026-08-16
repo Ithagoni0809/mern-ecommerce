@@ -90,6 +90,29 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleCancelOrder = async (orderId) => {
+    if (!window.confirm('Are you sure you want to force cancel this order?')) return;
+    try {
+      await API.put(`/admin/orders/${orderId}/cancel`);
+      alert('Order force-cancelled successfully by Admin!');
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to cancel order');
+    }
+  };
+
+  const handleToggleUserStatus = async (userId, currentActive) => {
+    const action = currentActive === false ? 'reactivate' : 'suspend';
+    if (!window.confirm(`Are you sure you want to ${action} this user account?`)) return;
+    try {
+      await API.put(`/admin/users/${userId}/toggle-status`);
+      alert(`User account ${action === 'suspend' ? 'SUSPENDED' : 'ACTIVATED'} successfully!`);
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update user status');
+    }
+  };
+
   const handleCreateProduct = async (e) => {
     e.preventDefault();
     try {
@@ -264,6 +287,7 @@ const AdminDashboard = () => {
                       </td>
                       <td className="p-3">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase ${
+                          ord.orderStatus === 'Cancelled' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
                           ord.isDelivered ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
                           ord.orderStatus === 'In Transit' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' :
                           'bg-amber-500/20 text-amber-300 border border-amber-500/30'
@@ -272,16 +296,28 @@ const AdminDashboard = () => {
                         </span>
                       </td>
                       <td className="p-3">
-                        <select
-                          value={ord.orderStatus}
-                          onChange={(e) => handleUpdateOrderStatus(ord._id, e.target.value)}
-                          className="bg-slate-900 border border-slate-700 text-xs text-slate-100 rounded-lg p-1.5 focus:border-indigo-500 focus:outline-none"
-                        >
-                          <option value="Processing">1. Processing</option>
-                          <option value="Dispatched">2. Dispatched</option>
-                          <option value="In Transit">3. In Transit</option>
-                          <option value="Delivered">4. Delivered</option>
-                        </select>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={ord.orderStatus}
+                            onChange={(e) => handleUpdateOrderStatus(ord._id, e.target.value)}
+                            className="bg-slate-900 border border-slate-700 text-xs text-slate-100 rounded-lg p-1.5 focus:border-indigo-500 focus:outline-none"
+                          >
+                            <option value="Processing">1. Processing</option>
+                            <option value="Dispatched">2. Dispatched</option>
+                            <option value="In Transit">3. In Transit</option>
+                            <option value="Delivered">4. Delivered</option>
+                            <option value="Cancelled">5. Cancelled</option>
+                          </select>
+                          {ord.orderStatus !== 'Cancelled' && !ord.isDelivered && (
+                            <button
+                              onClick={() => handleCancelOrder(ord._id)}
+                              className="px-2.5 py-1 bg-rose-600/80 hover:bg-rose-600 text-white text-[11px] rounded-lg font-semibold whitespace-nowrap transition-colors"
+                              title="Force Cancel Order"
+                            >
+                              Cancel Order
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -414,7 +450,8 @@ const AdminDashboard = () => {
                 <th className="p-3">User Name</th>
                 <th className="p-3">Email Address</th>
                 <th className="p-3">Platform Role</th>
-                <th className="p-3">Verification</th>
+                <th className="p-3">Account Status</th>
+                <th className="p-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
@@ -432,7 +469,27 @@ const AdminDashboard = () => {
                     </span>
                   </td>
                   <td className="p-3">
-                    <span className="text-emerald-400 font-semibold">Verified</span>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase ${
+                      u.isActive === false
+                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                        : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                    }`}>
+                      {u.isActive === false ? 'Suspended' : 'Active'}
+                    </span>
+                  </td>
+                  <td className="p-3 text-right">
+                    {u.role !== 'admin' && (
+                      <button
+                        onClick={() => handleToggleUserStatus(u._id, u.isActive !== false)}
+                        className={`px-3 py-1 text-xs rounded-lg font-semibold transition-colors ${
+                          u.isActive === false
+                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                            : 'bg-rose-600/80 hover:bg-rose-600 text-white'
+                        }`}
+                      >
+                        {u.isActive === false ? 'Reactivate' : 'Suspend User'}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

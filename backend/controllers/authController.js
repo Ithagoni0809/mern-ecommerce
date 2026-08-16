@@ -156,6 +156,10 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Invalid email or password credentials");
   }
 
+  if (user.isActive === false) {
+    throw new ApiError(403, "Your account has been suspended by administration. Please contact support.");
+  }
+
   const { accessToken } = generateTokensAndSetCookie(res, user);
 
   res.status(200).json(

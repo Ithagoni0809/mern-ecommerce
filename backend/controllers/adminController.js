@@ -177,10 +177,62 @@ const decideProductApproval = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, { status }, `Product has been ${status} for the marketplace`));
 });
 
+/**
+ * @desc    Toggle user account active / suspended status
+ * @route   PUT /api/v1/admin/users/:id/toggle-status
+ * @access  Private/Admin
+ */
+const toggleUserStatus = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    throw new ApiError(404, "User account not found");
+  }
+
+  if (user.role === "admin") {
+    throw new ApiError(400, "Administrator accounts cannot be suspended");
+  }
+
+  user.isActive = user.isActive === false ? true : false;
+  await user.save();
+
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      { id: user._id, isActive: user.isActive },
+      `User account ${user.isActive ? "activated" : "suspended"} successfully`
+    )
+  );
+});
+
+/**
+ * @desc    Force cancel an order by Admin
+ * @route   PUT /api/v1/admin/orders/:id/cancel
+ * @access  Private/Admin
+ */
+const cancelOrderAdmin = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+  if (!order) {
+    throw new ApiError(404, "Order not found");
+  }
+
+  if (order.isDelivered) {
+    throw new ApiError(400, "Cannot cancel an order that has already been delivered");
+  }
+
+  order.orderStatus = "Cancelled";
+  order.isCancelled = true;
+  order.cancelledAt = Date.now();
+  await order.save();
+
+  res.status(200).json(new ApiResponse(200, order, "Order has been cancelled by Administrator"));
+});
+
 module.exports = {
   getAdminDashboardStats,
   getAllUsers,
   updateUserRole,
+  toggleUserStatus,
+  cancelOrderAdmin,
   getPendingSellerRequests,
   decideSellerRequest,
   getPendingProducts,
