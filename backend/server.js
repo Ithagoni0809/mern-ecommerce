@@ -43,17 +43,25 @@ app.use(mongoSanitize());
 
 // CORS Configuration
 const allowedOrigins = [
-  process.env.CLIENT_URL || "http://localhost:5173",
+  process.env.CLIENT_URL,
+  "http://localhost:5173",
   "http://127.0.0.1:5173",
-];
+].filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        allowedOrigins.includes(origin.replace(/\/$/, "")) ||
+        origin.endsWith(".onrender.com") ||
+        origin.endsWith(".vercel.app") ||
+        origin.endsWith(".netlify.app")
+      ) {
         return callback(null, true);
       }
-      return callback(new Error("CORS policy violation: Origin not allowed"), false);
+      return callback(new Error(`CORS policy violation: Origin ${origin} not allowed`), false);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
