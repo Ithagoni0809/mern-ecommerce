@@ -100,12 +100,12 @@ userSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Generate Access Token (Short-lived)
+// Generate Access Token
 userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     { id: this._id, role: this.role },
     process.env.JWT_SECRET || "dev_jwt_access_secret_key_32_chars_long_spec",
-    { expiresIn: process.env.JWT_EXPIRE || "15m" }
+    { expiresIn: process.env.JWT_EXPIRE || "7d" }
   );
 };
 

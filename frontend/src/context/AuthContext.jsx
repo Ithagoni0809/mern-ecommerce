@@ -24,6 +24,7 @@ export const AuthProvider = ({ children }) => {
       setUser(authenticatedUser);
       sessionStorage.setItem('user', JSON.stringify(authenticatedUser));
       sessionStorage.setItem('accessToken', data.data.accessToken);
+      localStorage.setItem('accessToken', data.data.accessToken);
       return data;
     } finally {
       setLoading(false);
@@ -38,6 +39,7 @@ export const AuthProvider = ({ children }) => {
       setUser(registeredUser);
       sessionStorage.setItem('user', JSON.stringify(registeredUser));
       sessionStorage.setItem('accessToken', data.data.accessToken);
+      localStorage.setItem('accessToken', data.data.accessToken);
       return data;
     } finally {
       setLoading(false);

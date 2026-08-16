@@ -197,8 +197,8 @@ const logoutUser = asyncHandler(async (req, res) => {
   const isProduction = process.env.NODE_ENV === "production";
   res.clearCookie("refreshToken", {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? "strict" : "lax",
+    secure: isProduction ? true : false,
+    sameSite: isProduction ? "none" : "lax",
   });
 
   res.status(200).json(new ApiResponse(200, {}, "Logged out successfully"));

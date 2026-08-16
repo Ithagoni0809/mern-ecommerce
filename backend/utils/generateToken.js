@@ -10,12 +10,12 @@ const generateTokensAndSetCookie = (res, user) => {
   user.refreshToken = refreshToken;
   user.save({ validateBeforeSave: false });
 
-  // Cookie options
+  // Cookie options for cross-domain HTTPS support (Render frontend + backend)
   const isProduction = process.env.NODE_ENV === "production";
   const cookieOptions = {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? "strict" : "lax",
+    secure: isProduction ? true : false,
+    sameSite: isProduction ? "none" : "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   };
 
