@@ -88,6 +88,18 @@ const verifyDeliveryOtp = asyncHandler(async (req, res) => {
   order.isDelivered = true;
   order.deliveredAt = Date.now();
   order.deliveredBy = req.user._id;
+
+  // For Cash on Delivery orders, mark payment as collected upon doorstep OTP verification
+  if (!order.isPaid) {
+    order.isPaid = true;
+    order.paidAt = Date.now();
+    order.paymentResult = {
+      id: `cod_cash_${Date.now()}`,
+      status: "COMPLETED_CASH_COLLECTED",
+      update_time: new Date().toISOString(),
+    };
+  }
+
   await order.save();
 
   res.status(200).json(

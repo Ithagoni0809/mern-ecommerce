@@ -229,7 +229,15 @@ const Checkout = () => {
         </div>
         <h2 className="text-3xl font-bold text-slate-100">Order Confirmed & Placed!</h2>
         <p className="text-sm text-slate-400">
-          Your payment of <span className="font-bold text-emerald-400">${successOrder.totalPrice?.toFixed(2)}</span> has been verified.
+          {successOrder.paymentMethod === 'Cash on Delivery' ? (
+            <>
+              Please pay <span className="font-bold text-amber-400">${successOrder.totalPrice?.toFixed(2)}</span> in cash to the delivery partner upon arrival at your doorstep.
+            </>
+          ) : (
+            <>
+              Your card payment of <span className="font-bold text-emerald-400">${successOrder.totalPrice?.toFixed(2)}</span> has been verified.
+            </>
+          )}
         </p>
 
         <div className="p-5 glass-card rounded-2xl text-xs space-y-3 text-left">
@@ -702,8 +710,17 @@ const Checkout = () => {
             disabled={processingState !== null || items.length === 0}
             className="w-full btn-primary py-4 flex items-center justify-center gap-2 font-semibold text-sm shadow-lg shadow-indigo-500/20 cursor-pointer"
           >
-            <ShieldCheck className="w-5 h-5" />
-            <span>Pay ${total.toFixed(2)} Now</span>
+            {paymentMethod === 'cod' ? (
+              <>
+                <Truck className="w-5 h-5 text-emerald-400" />
+                <span>Place Order with Cash on Delivery (${total.toFixed(2)})</span>
+              </>
+            ) : (
+              <>
+                <ShieldCheck className="w-5 h-5" />
+                <span>Pay ${total.toFixed(2)} with Card</span>
+              </>
+            )}
           </button>
         </div>
 

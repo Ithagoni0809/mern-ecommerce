@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import API from '../../services/api';
-import { AlertTriangle, Mail, CheckCircle2, Loader2, ExternalLink } from 'lucide-react';
+import { AlertTriangle, Mail, CheckCircle2, Loader2 } from 'lucide-react';
 
 const EmailVerificationBanner = () => {
   const { user } = useAuth();
   const [sending, setSending] = useState(false);
   const [sentToast, setSentToast] = useState('');
-  const [testLink, setTestLink] = useState('');
   const [errorToast, setErrorToast] = useState('');
 
   // Only display if user is logged in and email is NOT verified
@@ -18,15 +17,11 @@ const EmailVerificationBanner = () => {
   const handleResend = async () => {
     setSending(true);
     setSentToast('');
-    setTestLink('');
     setErrorToast('');
 
     try {
-      const { data } = await API.post('/auth/resend-verification', { email: user.email });
-      setSentToast('Verification link sent to your email!');
-      if (data.data?.verificationUrl) {
-        setTestLink(data.data.verificationUrl);
-      }
+      await API.post('/auth/resend-verification', { email: user.email });
+      setSentToast('Verification link sent to your email inbox! Please check your email.');
       setTimeout(() => setSentToast(''), 8000);
     } catch (err) {
       setErrorToast(err.response?.data?.message || 'Failed to send verification link');
@@ -43,30 +38,20 @@ const EmailVerificationBanner = () => {
         <div className="flex items-center gap-2 text-center sm:text-left">
           <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
           <span>
-            <strong className="font-semibold text-white">Not Verified:</strong> Your email address (<span className="text-amber-200 font-mono">{user.email}</span>) is not verified. Please verify your email to secure your account.
+            <strong className="font-semibold text-white">Not Verified:</strong> Your email address (<span className="text-amber-200 font-mono">{user.email}</span>) is not verified. Click to receive a verification email.
           </span>
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
           {sentToast && (
-            <span className="text-emerald-400 font-semibold flex items-center gap-1 text-[11px]">
+            <span className="text-emerald-400 font-semibold flex items-center gap-1 text-[11px] bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
               <CheckCircle2 className="w-3.5 h-3.5" />
               {sentToast}
             </span>
           )}
-          
-          {testLink && (
-            <a
-              href={testLink}
-              className="text-indigo-300 hover:text-white underline font-semibold flex items-center gap-1 text-[11px]"
-            >
-              <span>Verify Now (Direct Link)</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
-          )}
 
           {errorToast && (
-            <span className="text-rose-400 text-[11px]">{errorToast}</span>
+            <span className="text-rose-400 text-[11px] bg-rose-500/10 px-2.5 py-1 rounded-lg border border-rose-500/20">{errorToast}</span>
           )}
 
           <button

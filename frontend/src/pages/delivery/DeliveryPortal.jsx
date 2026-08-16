@@ -12,6 +12,7 @@ const DeliveryPortal = () => {
   // OTP Verification Modal State
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [otpInput, setOtpInput] = useState('');
+  const [cashCollected, setCashCollected] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [modalError, setModalError] = useState('');
   const [successToast, setSuccessToast] = useState('');
@@ -45,10 +46,26 @@ const DeliveryPortal = () => {
     }
   };
 
+  const handleGenerateOtp = async (orderId) => {
+    try {
+      await API.post(`/delivery/orders/${orderId}/generate-otp`);
+      setSuccessToast('Doorstep Delivery OTP generated & sent to customer tracking screen!');
+      setTimeout(() => setSuccessToast(''), 5000);
+      fetchDeliveryQueue();
+    } catch (err) {
+      setModalError(err.response?.data?.message || 'Failed to generate OTP');
+    }
+  };
+
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     if (!otpInput.trim() || otpInput.length < 6) {
       return setModalError('Please enter the full 6-digit OTP code provided by the customer at doorstep');
+    }
+
+    const isCod = selectedOrder?.paymentMethod === 'Cash on Delivery' || !selectedOrder?.isPaid;
+    if (isCod && !cashCollected) {
+      return setModalError(`Please collect cash payment of $${selectedOrder?.totalPrice?.toFixed(2)} and confirm by checking the box below before verifying OTP.`);
     }
 
     setVerifying(true);
@@ -60,6 +77,7 @@ const DeliveryPortal = () => {
       setSuccessToast(`Package ${selectedOrder.trackingNumber} successfully verified & DELIVERED to customer doorstep!`);
       setTimeout(() => setSuccessToast(''), 5000);
       setSelectedOrder(null);
+      setCashCollected(false);
       fetchDeliveryQueue();
     } catch (err) {
       setModalError(err.response?.data?.message || 'Invalid 6-digit OTP entered. Please ask customer to check their screen.');
@@ -273,6 +291,28 @@ const DeliveryPortal = () => {
                   <div className="text-[11px] text-slate-400 italic">Landmark: {selectedOrder.shippingAddress.landmark}</div>
                 )}
               </div>
+
+              {/* COD Payment Collection Alert */}
+              {(selectedOrder.paymentMethod === 'Cash on Delivery' || !selectedOrder.isPaid) && (
+                <div className="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-xs space-y-2 text-left animate-fadeIn">
+                  <div className="flex justify-between items-center font-bold text-amber-300">
+                    <span className="flex items-center gap-1.5"><Truck className="w-4 h-4 text-amber-400" /> Cash on Delivery (COD)</span>
+                    <span className="text-sm font-extrabold text-white">${selectedOrder.totalPrice?.toFixed(2)}</span>
+                  </div>
+                  <p className="text-[11px] text-amber-200/90 leading-relaxed">
+                    ⚠️ <strong>Payment Due:</strong> Please collect <strong>${selectedOrder.totalPrice?.toFixed(2)}</strong> cash payment from the customer before completing delivery.
+                  </p>
+                  <label className="flex items-center gap-2 pt-1 cursor-pointer select-none text-slate-200 font-semibold text-xs bg-slate-950/60 p-2 rounded-xl border border-amber-500/20">
+                    <input
+                      type="checkbox"
+                      checked={cashCollected}
+                      onChange={(e) => setCashCollected(e.target.checked)}
+                      className="w-4 h-4 rounded accent-amber-500 cursor-pointer"
+                    />
+                    <span>I confirm cash payment of ${selectedOrder.totalPrice?.toFixed(2)} is collected</span>
+                  </label>
+                </div>
+              )}
             </div>
 
             {modalError && (
