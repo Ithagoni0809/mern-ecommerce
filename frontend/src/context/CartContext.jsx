@@ -30,11 +30,23 @@ export const CartProvider = ({ children }) => {
   }, [user]);
 
   const addToCart = async (productId, quantity = 1) => {
-    if (!user) return alert('Please login to add items to cart');
+    if (!user) {
+      alert('Please log in with a customer account to add items to your cart.');
+      return false;
+    }
+    if (user.role === 'delivery') {
+      alert('Delivery agent accounts are in Fulfillment Mode and cannot add items to cart. Please use a Customer account.');
+      return false;
+    }
     setLoading(true);
     try {
       const { data } = await API.post('/cart', { productId, quantity });
       setCart(data.data);
+      alert('Product added to your shopping cart!');
+      return true;
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to add item to cart. Please try again.');
+      return false;
     } finally {
       setLoading(false);
     }
@@ -45,6 +57,8 @@ export const CartProvider = ({ children }) => {
     try {
       const { data } = await API.put(`/cart/items/${productId}`, { quantity });
       setCart(data.data);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update quantity');
     } finally {
       setLoading(false);
     }
@@ -55,6 +69,8 @@ export const CartProvider = ({ children }) => {
     try {
       const { data } = await API.delete(`/cart/items/${productId}`);
       setCart(data.data);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to remove item');
     } finally {
       setLoading(false);
     }
@@ -65,6 +81,8 @@ export const CartProvider = ({ children }) => {
     try {
       const { data } = await API.delete('/cart');
       setCart(data.data);
+    } catch (err) {
+      console.error('Failed to clear cart:', err);
     } finally {
       setLoading(false);
     }
