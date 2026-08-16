@@ -169,7 +169,7 @@ const OrderTracking = () => {
   const isDispatched = order && ['Dispatched', 'In Transit', 'Out for Delivery'].includes(order.orderStatus);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 space-y-10 animate-fadeIn">
+    <div className="max-w-6xl mx-auto px-4 pt-10 pb-16 space-y-10 animate-fadeIn">
       
       {/* Dynamic Role-Based Header */}
       <div className="text-center space-y-2">

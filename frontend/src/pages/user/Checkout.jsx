@@ -158,6 +158,15 @@ const Checkout = () => {
       return alert('Your cart is empty');
     }
 
+    if (user?.role === 'seller') {
+      const hasOwnProduct = items.some(
+        (item) => item.product?.seller?._id === user._id || item.product?.seller === user._id
+      );
+      if (hasOwnProduct) {
+        return alert('Sellers cannot place orders for their own listed products. Please remove them from cart.');
+      }
+    }
+
     setProcessingState('connecting');
 
     try {

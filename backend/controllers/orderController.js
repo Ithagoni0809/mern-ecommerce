@@ -54,23 +54,21 @@ const createOrder = asyncHandler(async (req, res) => {
     let itemSeller = assignedPrimarySeller;
     let warehouseState = customerState;
 
-    try {
-      if (mongoose.Types.ObjectId.isValid(item.product)) {
-        const dbProduct = await Product.findById(item.product);
-        if (dbProduct) {
-          if (dbProduct.seller && dbProduct.seller.toString() === req.user._id.toString()) {
-            throw new ApiError(400, `Self-dealing prohibited: You cannot purchase your own store's product ("${dbProduct.name}").`);
-          }
-          price = dbProduct.discountPrice > 0 ? dbProduct.discountPrice : dbProduct.price;
-          name = dbProduct.name;
-          image = dbProduct.images[0]?.url || image;
-          if (dbProduct.seller) {
-            itemSeller = dbProduct.seller;
-          }
-          warehouseState = dbProduct.warehouseState || customerState;
+    if (mongoose.Types.ObjectId.isValid(item.product)) {
+      const dbProduct = await Product.findById(item.product);
+      if (dbProduct) {
+        if (dbProduct.seller && dbProduct.seller.toString() === req.user._id.toString()) {
+          throw new ApiError(400, `Sellers cannot order their own listed products ("${dbProduct.name}").`);
         }
+        price = dbProduct.discountPrice > 0 ? dbProduct.discountPrice : dbProduct.price;
+        name = dbProduct.name;
+        image = dbProduct.images?.[0]?.url || image;
+        if (dbProduct.seller) {
+          itemSeller = dbProduct.seller;
+        }
+        warehouseState = dbProduct.warehouseState || customerState;
       }
-    } catch (e) {}
+    }
 
     calculatedItemsPrice += price * (item.quantity || 1);
 
