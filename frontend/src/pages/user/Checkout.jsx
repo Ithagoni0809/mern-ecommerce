@@ -258,35 +258,6 @@ const Checkout = () => {
         theme: {
           color: '#6366f1',
         },
-        config: {
-          display: {
-            blocks: {
-              upi: {
-                name: 'Pay using UPI (GPay / PhonePe / Paytm / QR)',
-                instruments: [
-                  {
-                    method: 'upi',
-                  },
-                ],
-              },
-              other: {
-                name: 'Cards & NetBanking',
-                instruments: [
-                  {
-                    method: 'card',
-                  },
-                  {
-                    method: 'netbanking',
-                  },
-                ],
-              },
-            },
-            sequence: ['block.upi', 'block.other'],
-            preferences: {
-              show_default_blocks: true,
-            },
-          },
-        },
         modal: {
           ondismiss: function () {
             setProcessingState(null);
@@ -672,7 +643,7 @@ const Checkout = () => {
                 }`}
               >
                 <CreditCard className="w-4 h-4 text-indigo-400" />
-                <span>Razorpay (UPI / Card / NetBanking)</span>
+                <span>Razorpay (Cards / NetBanking)</span>
               </button>
 
               <button

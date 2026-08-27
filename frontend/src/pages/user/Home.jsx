@@ -43,7 +43,7 @@ const Home = () => {
             Discover Premium <span className="gradient-text">Products</span> Tailored For You.
           </h1>
           <p className="text-slate-400 text-base leading-relaxed">
-            Experience ultra-fast checkout, secure Razorpay & UPI payments, instant order tracking, and doorstep OTP verification.
+            Experience ultra-fast checkout, secure Razorpay online payments, instant order tracking, and doorstep OTP verification.
           </p>
 
           <div className="flex flex-wrap gap-4 pt-4">
@@ -86,7 +86,7 @@ const Home = () => {
           </div>
           <div>
             <h4 className="text-sm font-semibold text-slate-100">Razorpay Payments</h4>
-            <p className="text-xs text-slate-400 mt-0.5">Instant UPI, Card & NetBanking</p>
+            <p className="text-xs text-slate-400 mt-0.5">Instant Cards & NetBanking</p>
           </div>
         </div>
 
