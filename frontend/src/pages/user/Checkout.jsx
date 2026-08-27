@@ -692,18 +692,20 @@ const Checkout = () => {
             {paymentMethod === 'razorpay' && (
               <div className="p-5 bg-slate-900/90 rounded-2xl border border-indigo-500/20 space-y-3 animate-fadeIn">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-200 font-semibold">Instant Checkout Gateway</span>
+                  <span className="text-slate-200 font-semibold">Official Razorpay Gateway</span>
                   <span className="text-indigo-400 font-mono text-[11px] bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
-                    Official Razorpay SDK
+                    Test Mode Active
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Clicking <strong className="text-indigo-300">"Pay with Razorpay"</strong> opens the secure gateway popup where you can test payments using <strong>UPI (GPay / PhonePe / QR Code)</strong>, <strong>Credit/Debit Cards</strong>, or <strong>NetBanking</strong>.
+                  Clicking <strong className="text-indigo-300">"Pay with Razorpay"</strong> opens the secure Razorpay modal.
                 </p>
-                <div className="flex flex-wrap items-center gap-2 pt-1">
-                  <span className="px-2.5 py-1 rounded-lg bg-slate-950 text-[11px] text-slate-300 border border-slate-800">⚡ Instant UPI</span>
-                  <span className="px-2.5 py-1 rounded-lg bg-slate-950 text-[11px] text-slate-300 border border-slate-800">💳 All Major Cards</span>
-                  <span className="px-2.5 py-1 rounded-lg bg-slate-950 text-[11px] text-slate-300 border border-slate-800">🏦 50+ Banks</span>
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs space-y-1 text-slate-300">
+                  <div className="font-semibold text-indigo-400 flex items-center gap-1">
+                    <span>💡 How to Test:</span>
+                  </div>
+                  <p>• <strong>Card:</strong> Enter <span className="font-mono text-emerald-400 bg-slate-900 px-1.5 py-0.5 rounded">4111 2222 3333 4444</span> (any expiry & CVV)</p>
+                  <p>• <strong>NetBanking:</strong> Select any bank (SBI/HDFC) & click <em>"Success"</em></p>
                 </div>
               </div>
             )}
