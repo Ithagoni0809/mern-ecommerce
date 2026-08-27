@@ -283,7 +283,7 @@ const AdminDashboard = () => {
                       </td>
                       <td className="p-3 font-bold text-white">${ord.totalPrice?.toFixed(2) || '349.99'}</td>
                       <td className="p-3">
-                        <span className="text-emerald-400 font-semibold">PAID (Stripe)</span>
+                        <span className="text-emerald-400 font-semibold">{ord.paymentMethod || 'PAID (Razorpay)'}</span>
                       </td>
                       <td className="p-3">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase ${

@@ -43,7 +43,7 @@ const Home = () => {
             Discover Premium <span className="gradient-text">Products</span> Tailored For You.
           </h1>
           <p className="text-slate-400 text-base leading-relaxed">
-            Experience ultra-fast checkout, secure Stripe payments, instant order tracking, and curated luxury items with React 19 architecture.
+            Experience ultra-fast checkout, secure Razorpay & UPI payments, instant order tracking, and doorstep OTP verification.
           </p>
 
           <div className="flex flex-wrap gap-4 pt-4">
@@ -66,7 +66,7 @@ const Home = () => {
           </div>
           <div>
             <h4 className="text-sm font-semibold text-slate-100">Express Delivery</h4>
-            <p className="text-xs text-slate-400 mt-0.5">Free shipping on orders over $100</p>
+            <p className="text-xs text-slate-400 mt-0.5">Free shipping on orders over ₹500</p>
           </div>
         </div>
 
@@ -85,8 +85,8 @@ const Home = () => {
             <CreditCard className="w-6 h-6" />
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-slate-100">Stripe Payments</h4>
-            <p className="text-xs text-slate-400 mt-0.5">Instant credit card confirmation</p>
+            <h4 className="text-sm font-semibold text-slate-100">Razorpay Payments</h4>
+            <p className="text-xs text-slate-400 mt-0.5">Instant UPI, Card & NetBanking</p>
           </div>
         </div>
 

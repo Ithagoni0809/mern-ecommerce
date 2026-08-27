@@ -39,10 +39,10 @@ const Footer = () => {
           <div>
             <h4 className="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-4">Security</h4>
             <p className="text-xs text-slate-500 leading-relaxed mb-4">
-              Protected by JWT authentication, bcrypt password encryption, Helmet security headers, rate limiters, and Stripe payment gateway.
+              Protected by JWT authentication, bcrypt password encryption, Helmet security headers, rate limiters, and Razorpay payment gateway.
             </p>
             <span className="inline-block px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-semibold rounded-full border border-emerald-500/20">
-              ✓ Stripe Verified
+              ✓ Razorpay Verified
             </span>
           </div>
         </div>
