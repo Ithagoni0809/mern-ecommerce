@@ -6,6 +6,8 @@ const express = require("express");
 const {
   createPaymentIntent,
   confirmPayment,
+  createRazorpayOrder,
+  verifyRazorpayPayment,
 } = require("../controllers/paymentController");
 const { protect } = require("../middleware/authMiddleware");
 const { validateRequiredFields } = require("../middleware/validate");
@@ -24,6 +26,18 @@ router.post(
   "/confirm",
   validateRequiredFields(["orderId"]),
   confirmPayment
+);
+
+router.post(
+  "/razorpay-order",
+  validateRequiredFields(["amount"]),
+  createRazorpayOrder
+);
+
+router.post(
+  "/verify-razorpay",
+  validateRequiredFields(["orderId", "razorpay_payment_id"]),
+  verifyRazorpayPayment
 );
 
 module.exports = router;

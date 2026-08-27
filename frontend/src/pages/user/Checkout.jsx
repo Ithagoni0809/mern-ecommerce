@@ -49,13 +49,7 @@ const Checkout = () => {
     country: 'India',
   });
 
-  const [paymentMethod, setPaymentMethod] = useState('stripe');
-  const [cardDetails, setCardDetails] = useState({
-    nameOnCard: user?.name || 'Customer',
-    cardNumber: '4242 •••• •••• 4242',
-    expiry: '12/28',
-    cvc: '888',
-  });
+  const [paymentMethod, setPaymentMethod] = useState('razorpay');
 
   const [processingState, setProcessingState] = useState(null);
   const [successOrder, setSuccessOrder] = useState(null);
@@ -117,7 +111,7 @@ const Checkout = () => {
   }, 0);
 
   const tax = Number((subtotal * 0.08).toFixed(2));
-  const shipping = subtotal > 100 ? 0 : (subtotal > 0 ? 15.00 : 0);
+  const shipping = subtotal > 500 ? 0 : (subtotal > 0 ? 40.00 : 0);
   const total = Number((subtotal + tax + shipping).toFixed(2));
 
   // Guarantee every field is present for Mongoose validation
@@ -167,36 +161,47 @@ const Checkout = () => {
       }
     }
 
+    const orderItems = items.map((item) => ({
+      name: item.product?.name || 'Product',
+      quantity: item.quantity,
+      image: item.product?.images?.[0]?.url || '',
+      price: item.price || item.product?.discountPrice || item.product?.price || 0,
+      product: item.product?._id || item.product,
+    }));
+
+    // If COD Payment Selected
+    if (paymentMethod === 'cod') {
+      setProcessingState('finalizing');
+      try {
+        const orderRes = await API.post('/orders', {
+          orderItems,
+          shippingAddress: activeShippingAddress,
+          paymentMethod: 'Cash on Delivery',
+          itemsPrice: subtotal,
+          taxPrice: tax,
+          shippingPrice: shipping,
+          totalPrice: total,
+        });
+
+        setSuccessOrder(orderRes.data.data);
+        clearCart();
+      } catch (err) {
+        alert(err.response?.data?.message || err.message || 'Failed to place COD order');
+      } finally {
+        setProcessingState(null);
+      }
+      return;
+    }
+
+    // Razorpay Online Payment Flow
     setProcessingState('connecting');
 
     try {
-      let paymentIntentId = `pi_${Date.now()}_sandbox_${Math.random().toString(36).slice(-8)}`;
-      if (paymentMethod === 'stripe') {
-        try {
-          const intentRes = await API.post('/payments/create-intent', {
-            amount: total,
-          });
-          paymentIntentId = intentRes.data?.data?.paymentIntentId || paymentIntentId;
-        } catch (gatewayErr) {
-          console.warn('Sandbox Payment Intent Fallback:', gatewayErr);
-        }
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 600));
-      setProcessingState('authorizing');
-
-      const orderItems = items.map((item) => ({
-        name: item.product?.name || 'Product',
-        quantity: item.quantity,
-        image: item.product?.images?.[0]?.url || '',
-        price: item.price || item.product?.discountPrice || item.product?.price || 0,
-        product: item.product?._id || item.product,
-      }));
-
+      // 1. Create order in MongoDB
       const orderRes = await API.post('/orders', {
         orderItems,
         shippingAddress: activeShippingAddress,
-        paymentMethod: paymentMethod === 'stripe' ? 'Stripe Card' : 'Cash on Delivery',
+        paymentMethod: 'Razorpay Online',
         itemsPrice: subtotal,
         taxPrice: tax,
         shippingPrice: shipping,
@@ -205,27 +210,70 @@ const Checkout = () => {
 
       const createdOrder = orderRes.data.data;
 
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setProcessingState('finalizing');
+      // 2. Generate Razorpay Server Order
+      const rzpOrderRes = await API.post('/payments/razorpay-order', {
+        amount: total,
+      });
 
-      if (paymentMethod === 'stripe') {
-        try {
-          await API.post('/payments/confirm', {
-            orderId: createdOrder._id,
-            paymentIntentId,
-          });
-        } catch (confirmErr) {
-          console.warn('Payment confirmation record logged:', confirmErr);
-        }
+      const { orderId: rzpOrderId, amount, currency, keyId } = rzpOrderRes.data.data;
+      setProcessingState(null);
+
+      // 3. Launch Razorpay Popup
+      if (!window.Razorpay) {
+        alert('Razorpay SDK failed to load. Please refresh the page and try again.');
+        return;
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 400));
-      setSuccessOrder(createdOrder);
-      clearCart();
+      const options = {
+        key: keyId || 'rzp_test_placeholder',
+        amount: amount,
+        currency: currency || 'INR',
+        name: 'BharatKart',
+        description: `Order #${createdOrder.trackingNumber || createdOrder._id.slice(-6)}`,
+        image: 'https://cdn-icons-png.flaticon.com/512/3081/3081559.png',
+        order_id: rzpOrderId,
+        handler: async (response) => {
+          try {
+            setProcessingState('finalizing');
+            const verifyRes = await API.post('/payments/verify-razorpay', {
+              orderId: createdOrder._id,
+              razorpay_order_id: response.razorpay_order_id || rzpOrderId,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+
+            setSuccessOrder(verifyRes.data.data || createdOrder);
+            clearCart();
+          } catch (verifyErr) {
+            alert('Payment Verification Failed: ' + (verifyErr.response?.data?.message || verifyErr.message));
+          } finally {
+            setProcessingState(null);
+          }
+        },
+        prefill: {
+          name: activeShippingAddress.fullName || user?.name || '',
+          email: user?.email || '',
+          contact: activeShippingAddress.phone || user?.phone || '',
+        },
+        theme: {
+          color: '#6366f1',
+        },
+        modal: {
+          ondismiss: function () {
+            setProcessingState(null);
+          },
+        },
+      };
+
+      const rzpInstance = new window.Razorpay(options);
+      rzpInstance.on('payment.failed', function (response) {
+        alert('Payment Failed: ' + (response.error.description || 'Transaction cancelled'));
+        setProcessingState(null);
+      });
+      rzpInstance.open();
     } catch (err) {
-      alert(err.response?.data?.message || err.message || 'Failed to place order');
-    } finally {
       setProcessingState(null);
+      alert(err.response?.data?.message || err.message || 'Failed to initiate Razorpay checkout');
     }
   };
 
@@ -587,15 +635,15 @@ const Checkout = () => {
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => setPaymentMethod('stripe')}
+                onClick={() => setPaymentMethod('razorpay')}
                 className={`p-3.5 rounded-2xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                  paymentMethod === 'stripe'
+                  paymentMethod === 'razorpay'
                     ? 'border-indigo-500 bg-indigo-500/10 text-white shadow-lg shadow-indigo-500/10'
                     : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200'
                 }`}
               >
                 <CreditCard className="w-4 h-4 text-indigo-400" />
-                <span>Credit / Debit Card</span>
+                <span>Razorpay (UPI / Card / NetBanking)</span>
               </button>
 
               <button
@@ -612,60 +660,21 @@ const Checkout = () => {
               </button>
             </div>
 
-            {paymentMethod === 'stripe' && (
-              <div className="p-5 bg-slate-900/90 rounded-2xl border border-slate-800 space-y-4 animate-fadeIn">
-                <div>
-                  <label className="block text-xs text-slate-400 mb-1">Cardholder Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={cardDetails.nameOnCard}
-                    onChange={(e) => setCardDetails({ ...cardDetails, nameOnCard: e.target.value })}
-                    placeholder="Name as printed on card"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
-                  />
+            {paymentMethod === 'razorpay' && (
+              <div className="p-5 bg-slate-900/90 rounded-2xl border border-indigo-500/20 space-y-3 animate-fadeIn">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-200 font-semibold">Instant Checkout Gateway</span>
+                  <span className="text-indigo-400 font-mono text-[11px] bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
+                    Official Razorpay SDK
+                  </span>
                 </div>
-
-                <div>
-                  <label className="block text-xs text-slate-400 mb-1">Card Number</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      required
-                      value={cardDetails.cardNumber}
-                      onChange={(e) => setCardDetails({ ...cardDetails, cardNumber: e.target.value })}
-                      placeholder="4242 •••• •••• 4242"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-100 focus:outline-none focus:border-indigo-500 pl-10"
-                    />
-                    <CreditCard className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs text-slate-400 mb-1">Expiration Date</label>
-                    <input
-                      type="text"
-                      required
-                      value={cardDetails.expiry}
-                      onChange={(e) => setCardDetails({ ...cardDetails, expiry: e.target.value })}
-                      placeholder="MM/YY"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-100 focus:outline-none focus:border-indigo-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs text-slate-400 mb-1">CVC / CVV</label>
-                    <input
-                      type="password"
-                      required
-                      maxLength={4}
-                      value={cardDetails.cvc}
-                      onChange={(e) => setCardDetails({ ...cardDetails, cvc: e.target.value })}
-                      placeholder="•••"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-100 focus:outline-none focus:border-indigo-500"
-                    />
-                  </div>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Clicking <strong className="text-indigo-300">"Pay with Razorpay"</strong> opens the secure gateway popup where you can test payments using <strong>UPI (GPay / PhonePe / QR Code)</strong>, <strong>Credit/Debit Cards</strong>, or <strong>NetBanking</strong>.
+                </p>
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <span className="px-2.5 py-1 rounded-lg bg-slate-950 text-[11px] text-slate-300 border border-slate-800">⚡ Instant UPI</span>
+                  <span className="px-2.5 py-1 rounded-lg bg-slate-950 text-[11px] text-slate-300 border border-slate-800">💳 All Major Cards</span>
+                  <span className="px-2.5 py-1 rounded-lg bg-slate-950 text-[11px] text-slate-300 border border-slate-800">🏦 50+ Banks</span>
                 </div>
               </div>
             )}
@@ -685,9 +694,9 @@ const Checkout = () => {
                 <div key={item._id || item.product?._id} className="flex justify-between items-center text-xs text-slate-300">
                   <div className="flex-1 pr-2">
                     <div className="font-semibold text-slate-100 truncate">{item.product?.name || 'Product'}</div>
-                    <div className="text-slate-400">${unitPrice.toFixed(2)} × {item.quantity}</div>
+                    <div className="text-slate-400">₹{unitPrice.toFixed(2)} × {item.quantity}</div>
                   </div>
-                  <span className="font-bold text-slate-200">${itemTotal.toFixed(2)}</span>
+                  <span className="font-bold text-slate-200">₹{itemTotal.toFixed(2)}</span>
                 </div>
               );
             })}
@@ -696,21 +705,21 @@ const Checkout = () => {
           <div className="space-y-2.5 text-xs text-slate-400 border-b border-slate-800 pb-4">
             <div className="flex justify-between">
               <span>Items Subtotal</span>
-              <span className="text-slate-200 font-semibold">${subtotal.toFixed(2)}</span>
+              <span className="text-slate-200 font-semibold">₹{subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span>Estimated Shipping</span>
               <span className="text-emerald-400 font-semibold">
-                {shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}
+                {shipping === 0 ? 'FREE' : `₹${shipping.toFixed(2)}`}
               </span>
             </div>
             <div className="flex justify-between">
               <span>GST / Tax (8%)</span>
-              <span className="text-slate-200 font-semibold">${tax.toFixed(2)}</span>
+              <span className="text-slate-200 font-semibold">₹{tax.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-base font-bold text-white pt-2 border-t border-slate-800">
               <span>Total Payment</span>
-              <span className="text-xl font-extrabold text-indigo-400">${total.toFixed(2)}</span>
+              <span className="text-xl font-extrabold text-indigo-400">₹{total.toFixed(2)}</span>
             </div>
           </div>
 
@@ -722,12 +731,12 @@ const Checkout = () => {
             {paymentMethod === 'cod' ? (
               <>
                 <Truck className="w-5 h-5 text-emerald-400" />
-                <span>Place Order with Cash on Delivery (${total.toFixed(2)})</span>
+                <span>Place Order with Cash on Delivery (₹{total.toFixed(2)})</span>
               </>
             ) : (
               <>
                 <ShieldCheck className="w-5 h-5" />
-                <span>Pay ${total.toFixed(2)} with Card</span>
+                <span>Pay ₹{total.toFixed(2)} with Razorpay</span>
               </>
             )}
           </button>

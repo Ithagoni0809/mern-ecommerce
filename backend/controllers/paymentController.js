@@ -139,10 +139,130 @@ const confirmPayment = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, order, "Payment confirmed and order finalized"));
 });
 
+const crypto = require("crypto");
+const razorpay = require("../config/razorpay");
+
+/**
+ * @desc    Create Razorpay Order
+ * @route   POST /api/v1/payments/razorpay-order
+ * @access  Private
+ */
+const createRazorpayOrder = asyncHandler(async (req, res) => {
+  const { amount, currency = "INR" } = req.body;
+
+  if (!amount || Number(amount) <= 0) {
+    throw new ApiError(400, "Valid payment amount is required");
+  }
+
+  const amountInPaise = Math.round(Number(amount) * 100);
+
+  if (razorpay) {
+    try {
+      const options = {
+        amount: amountInPaise,
+        currency,
+        receipt: `rcpt_${Date.now()}`,
+      };
+      const order = await razorpay.orders.create(options);
+      return res.status(200).json(
+        new ApiResponse(
+          200,
+          {
+            orderId: order.id,
+            amount: order.amount,
+            currency: order.currency,
+            keyId: process.env.RAZORPAY_KEY_ID,
+          },
+          "Razorpay order generated successfully"
+        )
+      );
+    } catch (err) {
+      throw new ApiError(500, `Razorpay Order Error: ${err.message}`);
+    }
+  }
+
+  // Fallback / Sandbox order if keys aren't added yet
+  const dummyOrderId = `order_${Date.now()}`;
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        orderId: dummyOrderId,
+        amount: amountInPaise,
+        currency,
+        keyId: process.env.RAZORPAY_KEY_ID || "rzp_test_placeholder",
+      },
+      "Razorpay sandbox order created"
+    )
+  );
+});
+
+/**
+ * @desc    Verify Razorpay Payment Signature and finalize order
+ * @route   POST /api/v1/payments/verify-razorpay
+ * @access  Private
+ */
+const verifyRazorpayPayment = asyncHandler(async (req, res) => {
+  const { orderId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+  const order = await Order.findById(orderId);
+  if (!order) {
+    throw new ApiError(404, "Order not found");
+  }
+
+  // Cryptographic signature verification
+  if (process.env.RAZORPAY_KEY_SECRET && razorpay_signature) {
+    const body = `${razorpay_order_id}|${razorpay_payment_id}`;
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(body.toString())
+      .digest("hex");
+
+    if (expectedSignature !== razorpay_signature) {
+      throw new ApiError(400, "Invalid Razorpay payment signature");
+    }
+  }
+
+  // Mark Order as Paid
+  order.isPaid = true;
+  order.paidAt = Date.now();
+  order.paymentResult = {
+    id: razorpay_payment_id || `rzp_${Date.now()}`,
+    status: "succeeded",
+    update_time: new Date().toISOString(),
+    email_address: req.user.email,
+  };
+  await order.save();
+
+  // Deduct inventory stock
+  for (const item of order.orderItems) {
+    if (item.product) {
+      await Product.findByIdAndUpdate(item.product, {
+        $inc: { stock: -item.quantity },
+      });
+    }
+  }
+
+  // Record Payment Audit
+  await Payment.create({
+    user: req.user._id,
+    order: order._id,
+    paymentMethod: "razorpay",
+    transactionId: razorpay_payment_id || `rzp_${Date.now()}`,
+    amount: order.totalPrice,
+    currency: "INR",
+    status: "succeeded",
+  });
+
+  res.status(200).json(new ApiResponse(200, order, "Razorpay payment verified and order finalized"));
+});
+
 const verifyPayment = confirmPayment;
 
 module.exports = {
   createPaymentIntent,
   confirmPayment,
   verifyPayment,
+  createRazorpayOrder,
+  verifyRazorpayPayment,
 };

@@ -22,6 +22,7 @@
     "mongodb-memory-server": "^11.2.0",
     "mongoose": "^8.9.5",
     "nodemailer": "^6.10.0",
+    "razorpay": "^2.9.8",
     "stripe": "^17.6.0"
   },
   "devDependencies": {
