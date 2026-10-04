@@ -6,7 +6,8 @@
 [![Node.js](https://img.shields.io/badge/Node.js-v20-green)](https://nodejs.org)
 [![React](https://img.shields.io/badge/React-19-blue)](https://react.dev)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green)](https://mongodb.com/atlas)
-[![Stripe](https://img.shields.io/badge/Stripe-Payments-blueviolet)](https://stripe.com)
+[![Razorpay](https://img.shields.io/badge/Razorpay-UPI%20%26%20INR-02042b)](https://razorpay.com)
+[![Stripe](https://img.shields.io/badge/Stripe-Cards-blueviolet)](https://stripe.com)
 [![JWT](https://img.shields.io/badge/Auth-JWT-orange)](https://jwt.io)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
@@ -18,7 +19,7 @@
 |----------|--------|-----------------|-------|
 | 🛒 Browse & search product catalog | 📦 Manage inventory & listings | 🚚 View assigned pickup queue | 📊 Real-time sales & revenue analytics |
 | 📍 Multi-address book (Indian format) | 🏪 Pack orders at regional outlet | 🗺️ Navigate to merchant outlet | 👥 Manage users & suspend/reactivate accounts |
-| 💳 Stripe Card & Cash on Delivery (COD) | 🚀 Dispatch orders to courier | 💵 Doorstep cash collection verification | 🚫 Force-cancel orders with instant state reset |
+| 💳 Razorpay (UPI), Stripe & Cash on Delivery (COD) | 🚀 Dispatch orders to courier | 💵 Doorstep cash collection verification | 🚫 Force-cancel orders with instant state reset |
 | 📦 Live doorstep shipment tracking | 📈 Store revenue & order analytics | 🔐 6-digit OTP verification at doorstep | 🛍️ Multi-vendor catalog & review queue |
 | 🔒 Private 6-digit doorstep OTP | 🚫 Anti self-purchase protection | ✅ Mark delivery & payment confirmed | 🏪 Seller onboarding moderation |
 | ❤️ Wishlist & saved items | 🗂️ Category & brand filters | 📜 Delivery history & station logs | 📥 Manage orders, disputes & stage control |
@@ -29,7 +30,7 @@
 ## 🏗️ Architecture
 
 ```
-React 19 + Vite 6 (Vercel / Netlify)
+React 19 + Vite 6 (Vercel / Netlify / Render)
           │
           │ HTTPS + REST API
           ▼
@@ -39,9 +40,9 @@ Node.js + Express.js (Render / Railway)
           ▼
 MongoDB Atlas (Cloud Database)
           │
-     ┌────┴────┐
-  Stripe     Nodemailer
- Payments    (Email OTP)
+     ┌────┴────────────┐
+Razorpay / Stripe  Nodemailer
+ (Payment Gateways)  (Email OTP)
 ```
 
 **Proximity routing flow:** Customer state → Nearest regional hub → Merchant seller assigned → Courier dispatched → OTP verified at doorstep ✅
@@ -55,7 +56,7 @@ Frontend  :  React 19  ·  Vite 6  ·  Tailwind CSS  ·  React Router v7  ·  Ax
 Backend   :  Node.js  ·  Express.js  ·  REST API  ·  Nodemailer SMTP
 Database  :  MongoDB Atlas  ·  Mongoose ODM
 Auth      :  JWT (JSON Web Tokens)  ·  Bcrypt.js  ·  Role-Based Access Control (RBAC)
-Payments  :  Stripe SDK (Sandbox / Test mode)
+Payments  :  Razorpay SDK (UPI / NetBanking / Cards)  ·  Stripe SDK  ·  Cash on Delivery
 ```
 
 ---
@@ -117,7 +118,9 @@ MONGO_URI=your_mongodb_atlas_connection_string
 JWT_SECRET=your_jwt_secret_key
 JWT_EXPIRE=7d
 
-# Optional — only needed if testing Stripe payments
+# Optional — only needed if testing live payment gateways (Sandbox works without keys)
+# RAZORPAY_KEY_ID=rzp_test_your_key_id
+# RAZORPAY_KEY_SECRET=your_razorpay_secret
 # STRIPE_SECRET_KEY=sk_test_your_stripe_sandbox_key
 # STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
 ```
