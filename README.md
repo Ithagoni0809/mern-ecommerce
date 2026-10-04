@@ -16,13 +16,13 @@
 
 | Customer | Seller | Delivery Partner | Admin |
 |----------|--------|-----------------|-------|
-| 🛒 Browse & search product catalog | 📦 Manage inventory & listings | 🚚 View assigned pickup queue | 📊 Real-time sales dashboard |
-| 📍 Multi-address book (Indian format) | 🏪 Pack orders at outlet | 🗺️ Navigate to merchant outlet | 👥 Manage users & roles |
-| 💳 Stripe checkout (sandbox) | 🚀 Dispatch orders to courier | 🔐 6-digit OTP verification at doorstep | 🛍️ Product & category oversight |
-| 📦 Live shipment tracking | 📈 Sales & revenue view | ✅ Mark delivery confirmed | 📈 Revenue & order analytics |
-| 🔒 Private 6-digit doorstep OTP | 🔔 New order notifications | 📜 Delivery history | 🔔 Platform-wide notifications |
-| ❤️ Wishlist & saved items | 🗂️ Category & brand filters | — | 📥 Manage orders & disputes |
-| 🌙 Responsive modern UI | — | — | — |
+| 🛒 Browse & search product catalog | 📦 Manage inventory & listings | 🚚 View assigned pickup queue | 📊 Real-time sales & revenue analytics |
+| 📍 Multi-address book (Indian format) | 🏪 Pack orders at regional outlet | 🗺️ Navigate to merchant outlet | 👥 Manage users & suspend/reactivate accounts |
+| 💳 Stripe Card & Cash on Delivery (COD) | 🚀 Dispatch orders to courier | 💵 Doorstep cash collection verification | 🚫 Force-cancel orders with instant state reset |
+| 📦 Live doorstep shipment tracking | 📈 Store revenue & order analytics | 🔐 6-digit OTP verification at doorstep | 🛍️ Multi-vendor catalog & review queue |
+| 🔒 Private 6-digit doorstep OTP | 🚫 Anti self-purchase protection | ✅ Mark delivery & payment confirmed | 🏪 Seller onboarding moderation |
+| ❤️ Wishlist & saved items | 🗂️ Category & brand filters | 📜 Delivery history & station logs | 📥 Manage orders, disputes & stage control |
+| 🌙 Modern glassmorphism UI | — | — | — |
 
 ---
 
@@ -169,14 +169,15 @@ node test_proximity.js
 
 ---
 
-## 🔐 Security Features
+## 🔐 Security & Governance Features
 
-- **JWT Authentication** with secure HTTP-only token handling
-- **Bcrypt** password hashing (salt rounds: 10)
-- **RBAC** — each role can only access their own portal routes
-- **Delivery OTP** — 6-digit code visible only to the authenticated customer; verified at doorstep before marking delivered
-- **Email Verification** — token-based with 24-hour expiry
-- **Password Reset** — cryptographic token with 30-minute expiry
+- **JWT Authentication & Cross-Domain Cookies** — Dual Access/Refresh token architecture configured with `SameSite=None; Secure` for production deployments.
+- **Bcrypt Password Security** — 10 salt rounds for secure password hashing.
+- **Role-Based Access Control (RBAC)** — Granular route guards separating Customer, Seller, Delivery, and Admin portals.
+- **Doorstep OTP & Cash Collection Verification** — 6-digit handover OTP generated upon dispatch; for COD orders, couriers confirm cash collection before OTP verification.
+- **Anti Self-Dealing Protection** — Platform-level guard preventing merchants from ordering their own products to manipulate ratings or sales velocity.
+- **Admin Account Suspension** — Real-time user ban/unban mechanism preventing suspended accounts from authenticating (HTTP 403).
+- **Email Verification & Password Reset** — Cryptographic SHA-256 tokens dispatched directly to user inboxes with strict expiration windows.
 
 ---
 
